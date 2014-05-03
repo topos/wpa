@@ -1,7 +1,9 @@
 namespace :wpa do
   desc "connect to wifi, interface=wlan1"
-  task :start, [:ssid,:psk,:interface] => [:stop,:conf] do |t,arg|
-    arg.with_defaults(interface: 'wlan1')
+  task :start, [:psk,:ssid,:interface] do |t,arg|
+    arg.with_defaults(psk: ENV['WPA_PASSWORD'], ssid: 'topos', interface: 'wlan1')
+    task('wpa:stop').invoke(arg.interface)
+    task('wpa:conf').invoke(arg.ssid,arg.psk)
     sh "sudo ifconfig #{arg.interface} down"
     sh "sudo iwconfig #{arg.interface} mode Managed"
     sh "sudo ifconfig #{arg.interface} up"
@@ -13,9 +15,9 @@ namespace :wpa do
     psk = `wpa_passphrase "#{arg.ssid}" "#{arg.psk}"|grep -v '#psk='|grep psk`.strip
     c = [] 
     c << 'network={'
+    c << "        scan_ssid=1"
     c << "        ssid=\"#{arg.ssid}\""
     c << "        #{psk}"
-    c << "        scan_ssid=1"
     c << '}'
     conf = c.join("\n")
     File.open('/var/tmp/wpa_supplicant.conf','w'){|f|f.write conf}
