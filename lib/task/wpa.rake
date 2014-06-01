@@ -1,14 +1,14 @@
 namespace :wpa do
-  desc "connect to wifi, interface=wlan1"
-  task :start, [:psk,:ssid,:interface] do |t,arg|
-    arg.with_defaults(psk: ENV['WPA_PASSWORD'], ssid: 'topos', interface: 'wlan1')
-    task('wpa:stop').invoke(arg.interface)
+  desc "connect to wifi: (ssid,iface)=(topos,wlan1)"
+  task :start, [:ssid,:psk,:iface] do |t,arg|
+    arg.with_defaults(ssid: ENV['WPA_SSID'] || 'topos', psk: ENV['WPA_PSK'], iface: ENV['WPA_IFACE'] || 'wlan1')
+    task('wpa:stop').invoke(arg.iface)
     task('wpa:conf').invoke(arg.ssid,arg.psk)
-    sh "sudo ifconfig #{arg.interface} down"
-    sh "sudo iwconfig #{arg.interface} mode Managed"
-    sh "sudo ifconfig #{arg.interface} up"
-    sh "sudo wpa_supplicant -B -i#{arg.interface} -c/var/tmp/wpa_supplicant.conf -Dwext"
-    sh "sudo dhclient #{arg.interface}"
+    sh "sudo ifconfig #{arg.iface} down"
+    sh "sudo iwconfig #{arg.iface} mode Managed"
+    sh "sudo ifconfig #{arg.iface} up"
+    sh "sudo wpa_supplicant -B -i#{arg.iface} -c/var/tmp/wpa_supplicant.conf -Dwext"
+    sh "sudo dhclient #{arg.iface}"
   end
 
   task :conf, [:ssid,:psk] do |t,arg|
@@ -24,10 +24,10 @@ namespace :wpa do
   end
 
   desc "stop wpa_supplicant and dhclient"
-  task :stop, [:interface] do |t,arg|
-    arg.with_defaults(interface: 'wlan1')
+  task :stop, [:iface] do |t,arg|
+    arg.with_defaults(iface: 'wlan1')
     ['dhclient','wpa_supplicant'].each{|p|sh "sudo pkill -9 #{p} || exit 0"}
-    sh "sudo ifconfig #{arg.interface} down"
+    sh "sudo ifconfig #{arg.iface} down"
   end
 
   desc "install wpa supplicant"
