@@ -15,9 +15,9 @@ namespace :wpa do
     psk = `wpa_passphrase "#{arg.ssid}" "#{arg.psk}"|grep -v '#psk='|grep psk`.strip
     c = [] 
     c << 'network={'
-    c << "        scan_ssid=1"
-    c << "        ssid=\"#{arg.ssid}\""
-    c << "        #{psk}"
+    c << "  scan_ssid=1"
+    c << "  ssid=\"#{arg.ssid}\""
+    c << "  #{psk}"
     c << '}'
     conf = c.join("\n")
     File.open('/var/tmp/wpa_supplicant.conf','w'){|f|f.write conf}
@@ -35,5 +35,11 @@ namespace :wpa do
     sh "sudo aptitude update -y"
     sh "sudo aptitude install -y cnetworkmanager"
     #sh "sudo aptitude install -y wpasupplicant"
-  end    
+  end
+
+  desc "gui"
+  task :gui, [:iface] do |t,arg|
+    arg.with_defaults(iface: 'wlan1')
+    sh "sudo wpa_gui -i #{arg.iface}"
+  end
 end
