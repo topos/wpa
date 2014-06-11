@@ -1,4 +1,6 @@
 namespace :wifi do
+  require 'smart_colored/extend'
+
   desc 'conect to wifi, wpa auth'
   task :wpa, [:ssid,:psk,:iface] do |t,arg|
     arg.with_defaults(ssid: ENV['WIFI_SSID'] || 'topos', psk: ENV['WIFI_PSK'], iface: ENV['WIFI_IFACE'] || 'wlan1')
@@ -38,8 +40,13 @@ namespace :wifi do
       end
       aps << h
     end
-    aps.each do |ap|
-      puts ap.inspect
+    aps.select{|e|!e['ESSID'].nil?}.sort_by{|h|h['ESSID']}.each.with_index do |ap,i|
+      a = "#{ap['ESSID']}    #{ap['Quality']}"
+      if ap['Encryption key'] == 'on'
+        puts a.red
+      else
+        puts a.green
+      end
     end
   end
 
@@ -81,7 +88,7 @@ namespace :wifi do
       l = c.split(/Cell\s+[0-9]+/).map{|l|l.strip}.first
       cs << l.split("\n").map{|e|e.strip}.map do |e|
         if e.include? 'Address:'
-          e.split('-')
+          e.split('-').last.split(':',2)
         else
           e.split(/:|=/)
         end.map{|x|x.strip}
