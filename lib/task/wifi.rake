@@ -14,12 +14,12 @@ namespace :wifi do
   end
 
   desc 'conect to wifi, wep'
-  task :wifi, [:ssid,:psk,:iface] do |t,arg|
+  task :wep, [:ssid,:psk,:iface] do |t,arg|
     arg.with_defaults(iface: 'wlan1')
     sh "sudo ifconfig #{arg.iface} down"
     sh "sudo iwconfig #{arg.iface} mode Managed"
     sh "sudo ifconfig #{arg.iface} up"
-    sh "sudo iwconfig #{arg.iface} essid #{arg.ssid}"
+    sh "sudo iwconfig #{arg.iface} essid '#{arg.ssid}'"
     unless arg.psk.nil? 
       sh "sudo iwconfig #{arg.iface} key s:#{arg.psk}"
     end
@@ -55,7 +55,7 @@ namespace :wifi do
     c = [] 
     c << 'network={'
     c << "  scan_ssid=1"
-    c << "  ssid=\"#{arg.ssid}\""
+    c << "  ssid='#{arg.ssid}'"
     c << "  #{psk}"
     c << '}'
     conf = c.join("\n")
