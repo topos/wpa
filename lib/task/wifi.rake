@@ -1,11 +1,15 @@
 namespace :wifi do
   require 'smart_colored/extend'
 
+  INTERFACE = ENV['WIFI_IFACE']  || 'wlan1'
+  SSID = ENV['WIFI_SSID'] || 'topos'
+  PSK = ENV['WIFI_PSK']
+
   desc 'conect to wifi, wpa auth'
   task :wpa, [:ssid,:psk,:iface] do |t,arg|
-    arg.with_defaults(ssid: ENV['WIFI_SSID'] || 'topos', psk: ENV['WIFI_PSK'], iface: ENV['WIFI_IFACE'] || 'wlan1')
-    task('wpa:stop').invoke(arg.iface)
-    task('wpa:conf').invoke(arg.ssid,arg.psk)
+    arg.with_defaults(ssid: SSID, psk: PSK, iface: INTERFACE)
+    task('wifi:stop').invoke(arg.iface)
+    task('wifi:conf').invoke(arg.ssid,arg.psk)
     sh "sudo ifconfig #{arg.iface} down"
     sh "sudo iwconfig #{arg.iface} mode Managed"
     sh "sudo ifconfig #{arg.iface} up"
@@ -15,7 +19,7 @@ namespace :wifi do
 
   desc 'conect to wifi, wep'
   task :wep, [:ssid,:psk,:iface] do |t,arg|
-    arg.with_defaults(iface: 'wlan1')
+    arg.with_defaults(ssid: SSID, psk: PSK, iface: INTERFACE)
     sh "sudo ifconfig #{arg.iface} down"
     sh "sudo iwconfig #{arg.iface} mode Managed"
     sh "sudo ifconfig #{arg.iface} up"
@@ -55,8 +59,8 @@ namespace :wifi do
     c = [] 
     c << 'network={'
     c << "  scan_ssid=1"
-    c << "  ssid='#{arg.ssid}'"
-    c << "  #{psk}"
+    c << "  ssid=\"#{arg.ssid}\""
+    c << "  #{psk}" unless psk.nil? || psk == ''
     c << '}'
     conf = c.join("\n")
     File.open('/var/tmp/wpa_supplicant.conf','w'){|f|f.write conf}
