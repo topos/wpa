@@ -36,3 +36,7 @@ task :home do
   sh "sudo wpa_gui -i wlan0"
   sh "sudo dhclient wlan0"
 end
+
+desc "restart network manager"
+task :restart => 'wifi:restart'
+

@@ -30,7 +30,6 @@ namespace :wifi do
     sh "sudo dhclient #{arg.iface}"
   end
 
-
   desc "list access points"
   task :list, [:iface] do |t,arg|
     arg.with_defaults(iface:'wlan1')
@@ -85,6 +84,11 @@ namespace :wifi do
   task :gui, [:iface] do |t,arg|
     arg.with_defaults(iface: 'wlan1')
     sh "sudo wpa_gui -i #{arg.iface}"
+  end
+
+  desc "restart network-manager"
+  task :restart do
+    sh "sudo restart network-manager"
   end
 
   def cells(block)
