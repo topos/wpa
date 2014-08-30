@@ -1,15 +1,15 @@
 namespace :wifi do
   require 'smart_colored/extend'
 
-  INTERFACE = ENV['WIFI_IFACE']  || 'wlan1'
+  INTERFACE = ENV['WIFI_IFACE']  || 'wlan0'
   SSID = ENV['WIFI_SSID'] || 'topos'
   PSK = ENV['WIFI_PSK']
 
   desc 'conect to wifi, wpa auth'
-  task :wpa, [:ssid,:psk,:iface] do |t,arg|
-    arg.with_defaults(ssid: SSID, psk: PSK, iface: INTERFACE)
+  task :wpa, [:ssid,:psk,:iface,:opts] do |t,arg|
+    arg.with_defaults(ssid: SSID, psk: PSK, iface: INTERFACE, opts: '')
     task('wifi:stop').invoke(arg.iface)
-    task('wifi:conf').invoke(arg.ssid,arg.psk)
+    task('wifi:conf').invoke(arg.ssid,arg.psk,arg.opts)
     sh "sudo ifconfig #{arg.iface} down"
     sh "sudo iwconfig #{arg.iface} mode Managed"
     sh "sudo ifconfig #{arg.iface} up"
@@ -54,13 +54,14 @@ namespace :wifi do
     end
   end
 
-  task :conf, [:ssid,:psk] do |t,arg|
+  task :conf, [:ssid,:psk,:opts] do |t,arg|
     psk = `wpa_passphrase "#{arg.ssid}" "#{arg.psk}"|grep -v '#psk='|grep psk`.strip
     c = [] 
     c << 'network={'
     c << "  scan_ssid=1"
     c << "  ssid=\"#{arg.ssid}\""
     c << "  #{psk}" unless psk.nil? || psk == ''
+    arg.opts.split.each{|kv|c << "  #{kv}"}
     c << '}'
     conf = c.join("\n")
     File.open('/var/tmp/wpa_supplicant.conf','w'){|f|f.write conf}
