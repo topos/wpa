@@ -8,13 +8,13 @@ namespace :wifi do
   desc 'conect to wifi, wpa auth'
   task :wpa, [:ssid,:psk,:iface,:opts] do |t,arg|
     arg.with_defaults(ssid: SSID, psk: PSK, iface: INTERFACE, opts: '')
-    task('wifi:stop').invoke(arg.iface)
-    task('wifi:conf').invoke(arg.ssid,arg.psk,arg.opts)
+    sh "rake wifi:stop[#{arg.iface}]"
+    sh "rake wifi:conf[#{arg.ssid},'#{arg.psk.gsub(',','\,')}','#{arg.opts}]'"
     sh "sudo ifconfig #{arg.iface} down"
     sh "sudo iwconfig #{arg.iface} mode Managed"
     sh "sudo ifconfig #{arg.iface} up"
     sh "sudo wpa_supplicant -B -i#{arg.iface} -c/var/tmp/wpa_supplicant.conf -Dwext"
-    sh "sudo dhclient #{arg.iface}"
+    sh "sudo dhclient -v #{arg.iface}"
   end
 
   desc 'conect to wifi, wep'
@@ -24,7 +24,7 @@ namespace :wifi do
     sh "sudo iwconfig #{arg.iface} mode Managed"
     sh "sudo ifconfig #{arg.iface} up"
     sh "sudo iwconfig #{arg.iface} essid '#{arg.ssid}'"
-    unless arg.psk.nil? 
+    unless arg.psk.nil? || arg.psk == ''
       sh "sudo iwconfig #{arg.iface} key s:#{arg.psk}"
     end
     sh "sudo dhclient #{arg.iface}"
@@ -54,7 +54,9 @@ namespace :wifi do
   end
 
   task :conf, [:ssid,:psk,:opts] do |t,arg|
-    psk = `wpa_passphrase "#{arg.ssid}" "#{arg.psk}"|grep -v '#psk='|grep psk`.strip
+    p arg.psk
+    psk = `wpa_passphrase '#{arg.ssid}' '#{arg.psk}' | grep -v '#psk='|grep psk`.strip
+    puts psk.green
     c = [] 
     c << 'network={'
     c << "  scan_ssid=1"
@@ -63,6 +65,7 @@ namespace :wifi do
     arg.opts.split.each{|kv|c << "  #{kv}"}
     c << '}'
     conf = c.join("\n")
+    puts conf
     File.open('/var/tmp/wpa_supplicant.conf','w'){|f|f.write conf}
   end
 
@@ -76,14 +79,15 @@ namespace :wifi do
   desc "install wpa supplicant"
   task :install do
     sh "sudo aptitude update -y"
-    sh "sudo aptitude install -y cnetworkmanager"
-    #sh "sudo aptitude install -y wpasupplicant"
+    sh "sudo aptitude install -y network-manager"
+    sh "sudo aptitude install -y wpasupplicant"
   end
 
   desc "gui"
   task :gui, [:iface] do |t,arg|
     arg.with_defaults(iface: 'wlan1')
     sh "sudo wpa_gui -i #{arg.iface}"
+    sh "sudo dhclient -v #{arg.iface}"
   end
 
   desc "restart network-manager"

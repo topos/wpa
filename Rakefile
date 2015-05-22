@@ -10,17 +10,9 @@ desc "list aps"
 task :list => 'wifi:list'
 
 desc "shutterstock wlan via cmd line"
-task :work2 do
+task :work do
   opts = 'key_mgmt=WPA-EAP pairwise=CCMP group=CCMP eap=PEAP'
   sh "rake wifi:wpa[Shutterstock,#{ENV['WIFI_PSK']},wlan0,'#{opts}']"
-end
-
-desc "work (openvpn) via gui"
-task :work do
-  sh "sudo wpa_gui -i wlan0"
-  sh "sudo dhclient wlan0"
-  sh "rake vpn"
-  puts "add \"nameserver 10.100.1.5\" to resolv.conf".red
 end
 
 LOGNAME = ENV['LOGNAME']
@@ -31,12 +23,13 @@ task :vpn do
   end
 end
 
-desc "home via gui"
+desc "home via command line" 
 task :home do
-  sh "sudo wpa_gui -i wlan0"
-  sh "sudo dhclient wlan0"
+  raise "ENV WIFI_IFACE not set" if ENV['WIFI_IFACE'].nil?
+  raise "ENV WIFI_PSK not set" if ENV['WIFI_PSK'].nil?
+  sh "rake wifi:wpa[topos,'#{ENV['WIFI_PSK'].gsub(',','\,')}',#{ENV['WIFI_IFACE']},'key_mgmt=WPA-PSK']"
+  sh "sudo dhclient #{ENV['WIFI_IFACE']}"
 end
 
 desc "restart network manager"
 task :restart => 'wifi:restart'
-
